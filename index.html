@@ -1,0 +1,1622 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-search.css">
+        <link rel="stylesheet" href="css/filter.css">
+<link rel="stylesheet" href="css/nouislider.min.css">
+        <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-control-geocoder.Geocoder.js"></script>
+        <script src="js/leaflet-search.js"></script>
+        <script src="js/tailDT.js"></script>
+<script src="js/nouislider.min.js"></script>
+<script src="js/wNumb.js"></script>
+        <script src="data/TYPE_1.js"></script>
+        <script src="data/LOCALTION_2.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
+              highlightLayer.setStyle({
+                color: '#ffff00',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#ffff00',
+                fillOpacity: 1
+              });
+            }
+            highlightLayer.openPopup();
+        }
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[-47.7655738213592,-83.92339302839231],[38.40830431787569,102.10042240869323]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_GoogleSatellite_0');
+        map.getPane('pane_GoogleSatellite_0').style.zIndex = 400;
+        var layer_GoogleSatellite_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleSatellite_0',
+            opacity: 1.0,
+            attribution: '<a href="https://www.google.at/permissions/geoguidelines/attr-guide.html">Map data ©2015 Google</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 20
+        });
+        layer_GoogleSatellite_0;
+        map.addLayer(layer_GoogleSatellite_0);
+        function pop_TYPE_1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['scalerank'] !== null ? autolinker.link(String(feature.properties['scalerank']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['featurecla'] !== null ? autolinker.link(String(feature.properties['featurecla']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['type'] !== null ? autolinker.link(String(feature.properties['type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['abbrev'] !== null ? autolinker.link(String(feature.properties['abbrev']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['location'] !== null ? autolinker.link(String(feature.properties['location']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['gps_code'] !== null ? autolinker.link(String(feature.properties['gps_code']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['iata_code'] !== null ? autolinker.link(String(feature.properties['iata_code']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['wikipedia'] !== null ? autolinker.link(String(feature.properties['wikipedia']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['natlscale'] !== null ? autolinker.link(String(feature.properties['natlscale']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['comments'] !== null ? autolinker.link(String(feature.properties['comments']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['wikidataid'] !== null ? autolinker.link(String(feature.properties['wikidataid']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_ar'] !== null ? autolinker.link(String(feature.properties['name_ar']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_bn'] !== null ? autolinker.link(String(feature.properties['name_bn']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_de'] !== null ? autolinker.link(String(feature.properties['name_de']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_en'] !== null ? autolinker.link(String(feature.properties['name_en']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_es'] !== null ? autolinker.link(String(feature.properties['name_es']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_fr'] !== null ? autolinker.link(String(feature.properties['name_fr']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_el'] !== null ? autolinker.link(String(feature.properties['name_el']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_hi'] !== null ? autolinker.link(String(feature.properties['name_hi']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_hu'] !== null ? autolinker.link(String(feature.properties['name_hu']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_id'] !== null ? autolinker.link(String(feature.properties['name_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_it'] !== null ? autolinker.link(String(feature.properties['name_it']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_ja'] !== null ? autolinker.link(String(feature.properties['name_ja']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_ko'] !== null ? autolinker.link(String(feature.properties['name_ko']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_nl'] !== null ? autolinker.link(String(feature.properties['name_nl']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_pl'] !== null ? autolinker.link(String(feature.properties['name_pl']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_pt'] !== null ? autolinker.link(String(feature.properties['name_pt']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_ru'] !== null ? autolinker.link(String(feature.properties['name_ru']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_sv'] !== null ? autolinker.link(String(feature.properties['name_sv']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_tr'] !== null ? autolinker.link(String(feature.properties['name_tr']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_vi'] !== null ? autolinker.link(String(feature.properties['name_vi']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_zh'] !== null ? autolinker.link(String(feature.properties['name_zh']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['wdid_score'] !== null ? autolinker.link(String(feature.properties['wdid_score']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ne_id'] !== null ? autolinker.link(String(feature.properties['ne_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_fa'] !== null ? autolinker.link(String(feature.properties['name_fa']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_he'] !== null ? autolinker.link(String(feature.properties['name_he']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_uk'] !== null ? autolinker.link(String(feature.properties['name_uk']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_ur'] !== null ? autolinker.link(String(feature.properties['name_ur']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_zht'] !== null ? autolinker.link(String(feature.properties['name_zht']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_TYPE_1_0(feature) {
+            switch(String(feature.properties['type'])) {
+                case 'major':
+                    return {
+                pane: 'pane_TYPE_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(38,204,157,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'major and military':
+                    return {
+                pane: 'pane_TYPE_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(109,116,201,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'mid':
+                    return {
+                pane: 'pane_TYPE_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(212,103,52,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'mid and military':
+                    return {
+                pane: 'pane_TYPE_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(79,222,96,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'military':
+                    return {
+                pane: 'pane_TYPE_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(200,52,185,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'military major':
+                    return {
+                pane: 'pane_TYPE_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(201,16,68,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'military mid':
+                    return {
+                pane: 'pane_TYPE_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(161,228,98,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'small':
+                    return {
+                pane: 'pane_TYPE_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(21,154,216,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'spaceport':
+                    return {
+                pane: 'pane_TYPE_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(164,96,228,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_TYPE_1');
+        map.getPane('pane_TYPE_1').style.zIndex = 401;
+        map.getPane('pane_TYPE_1').style['mix-blend-mode'] = 'normal';
+        var layer_TYPE_1 = new L.geoJson(json_TYPE_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_TYPE_1',
+            layerName: 'layer_TYPE_1',
+            pane: 'pane_TYPE_1',
+            onEachFeature: pop_TYPE_1,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_TYPE_1_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_TYPE_1);
+        map.addLayer(layer_TYPE_1);
+        function pop_LOCALTION_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">scalerank</th>\
+                        <td>' + (feature.properties['scalerank'] !== null ? autolinker.link(String(feature.properties['scalerank']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">featurecla</th>\
+                        <td>' + (feature.properties['featurecla'] !== null ? autolinker.link(String(feature.properties['featurecla']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">type</th>\
+                        <td>' + (feature.properties['type'] !== null ? autolinker.link(String(feature.properties['type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">name</th>\
+                        <td>' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">abbrev</th>\
+                        <td>' + (feature.properties['abbrev'] !== null ? autolinker.link(String(feature.properties['abbrev']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">location</th>\
+                        <td>' + (feature.properties['location'] !== null ? autolinker.link(String(feature.properties['location']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">gps_code</th>\
+                        <td>' + (feature.properties['gps_code'] !== null ? autolinker.link(String(feature.properties['gps_code']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">iata_code</th>\
+                        <td>' + (feature.properties['iata_code'] !== null ? autolinker.link(String(feature.properties['iata_code']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">wikipedia</th>\
+                        <td>' + (feature.properties['wikipedia'] !== null ? autolinker.link(String(feature.properties['wikipedia']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">natlscale</th>\
+                        <td>' + (feature.properties['natlscale'] !== null ? autolinker.link(String(feature.properties['natlscale']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">comments</th>\
+                        <td>' + (feature.properties['comments'] !== null ? autolinker.link(String(feature.properties['comments']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['wikidataid'] !== null ? autolinker.link(String(feature.properties['wikidataid']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_ar'] !== null ? autolinker.link(String(feature.properties['name_ar']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_bn'] !== null ? autolinker.link(String(feature.properties['name_bn']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_de'] !== null ? autolinker.link(String(feature.properties['name_de']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_en'] !== null ? autolinker.link(String(feature.properties['name_en']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_es'] !== null ? autolinker.link(String(feature.properties['name_es']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_fr'] !== null ? autolinker.link(String(feature.properties['name_fr']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_el'] !== null ? autolinker.link(String(feature.properties['name_el']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_hi'] !== null ? autolinker.link(String(feature.properties['name_hi']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_hu'] !== null ? autolinker.link(String(feature.properties['name_hu']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_id'] !== null ? autolinker.link(String(feature.properties['name_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_it'] !== null ? autolinker.link(String(feature.properties['name_it']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_ja'] !== null ? autolinker.link(String(feature.properties['name_ja']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_ko'] !== null ? autolinker.link(String(feature.properties['name_ko']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_nl'] !== null ? autolinker.link(String(feature.properties['name_nl']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_pl'] !== null ? autolinker.link(String(feature.properties['name_pl']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_pt'] !== null ? autolinker.link(String(feature.properties['name_pt']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_ru'] !== null ? autolinker.link(String(feature.properties['name_ru']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_sv'] !== null ? autolinker.link(String(feature.properties['name_sv']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_tr'] !== null ? autolinker.link(String(feature.properties['name_tr']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_vi'] !== null ? autolinker.link(String(feature.properties['name_vi']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_zh'] !== null ? autolinker.link(String(feature.properties['name_zh']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['wdid_score'] !== null ? autolinker.link(String(feature.properties['wdid_score']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ne_id'] !== null ? autolinker.link(String(feature.properties['ne_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_fa'] !== null ? autolinker.link(String(feature.properties['name_fa']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_he'] !== null ? autolinker.link(String(feature.properties['name_he']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_uk'] !== null ? autolinker.link(String(feature.properties['name_uk']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_ur'] !== null ? autolinker.link(String(feature.properties['name_ur']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_zht'] !== null ? autolinker.link(String(feature.properties['name_zht']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_LOCALTION_2_0(feature) {
+            switch(String(feature.properties['location'])) {
+                case 'approximate':
+                    return {
+                pane: 'pane_LOCALTION_2',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(234,114,22,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'freight':
+                    return {
+                pane: 'pane_LOCALTION_2',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(109,128,234,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'parking':
+                    return {
+                pane: 'pane_LOCALTION_2',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(121,235,235,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ramp':
+                    return {
+                pane: 'pane_LOCALTION_2',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(176,236,24,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'runway':
+                    return {
+                pane: 'pane_LOCALTION_2',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(216,20,102,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'terminal':
+                    return {
+                pane: 'pane_LOCALTION_2',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(129,228,142,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_LOCALTION_2');
+        map.getPane('pane_LOCALTION_2').style.zIndex = 402;
+        map.getPane('pane_LOCALTION_2').style['mix-blend-mode'] = 'normal';
+        var layer_LOCALTION_2 = new L.geoJson(json_LOCALTION_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_LOCALTION_2',
+            layerName: 'layer_LOCALTION_2',
+            pane: 'pane_LOCALTION_2',
+            onEachFeature: pop_LOCALTION_2,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_LOCALTION_2_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_LOCALTION_2);
+        map.addLayer(layer_LOCALTION_2);
+        var osmGeocoder = new L.Control.Geocoder({
+            collapsed: true,
+            position: 'topleft',
+            text: 'Search',
+            title: 'Testing'
+        }).addTo(map);
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .className += ' fa fa-search';
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .title += 'Search for a place';
+        var overlaysTree = [
+            {label: 'LOCALTION<br /><table><tr><td style="text-align: center;"><img src="legend/LOCALTION_2_approximate0.png" /></td><td>approximate</td></tr><tr><td style="text-align: center;"><img src="legend/LOCALTION_2_freight1.png" /></td><td>freight</td></tr><tr><td style="text-align: center;"><img src="legend/LOCALTION_2_parking2.png" /></td><td>parking</td></tr><tr><td style="text-align: center;"><img src="legend/LOCALTION_2_ramp3.png" /></td><td>ramp</td></tr><tr><td style="text-align: center;"><img src="legend/LOCALTION_2_runway4.png" /></td><td>runway</td></tr><tr><td style="text-align: center;"><img src="legend/LOCALTION_2_terminal5.png" /></td><td>terminal</td></tr></table>', layer: layer_LOCALTION_2},
+            {label: 'TYPE<br /><table><tr><td style="text-align: center;"><img src="legend/TYPE_1_major0.png" /></td><td>major</td></tr><tr><td style="text-align: center;"><img src="legend/TYPE_1_majorandmilitary1.png" /></td><td>major and military</td></tr><tr><td style="text-align: center;"><img src="legend/TYPE_1_mid2.png" /></td><td>mid</td></tr><tr><td style="text-align: center;"><img src="legend/TYPE_1_midandmilitary3.png" /></td><td>mid and military</td></tr><tr><td style="text-align: center;"><img src="legend/TYPE_1_military4.png" /></td><td>military</td></tr><tr><td style="text-align: center;"><img src="legend/TYPE_1_militarymajor5.png" /></td><td>military major</td></tr><tr><td style="text-align: center;"><img src="legend/TYPE_1_militarymid6.png" /></td><td>military mid</td></tr><tr><td style="text-align: center;"><img src="legend/TYPE_1_small7.png" /></td><td>small</td></tr><tr><td style="text-align: center;"><img src="legend/TYPE_1_spaceport8.png" /></td><td>spaceport</td></tr></table>', layer: layer_TYPE_1},
+            {label: "Google Satellite", layer: layer_GoogleSatellite_0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: true,
+        });
+        lay.addTo(map);
+        setBounds();
+        map.addControl(new L.Control.Search({
+            layer: layer_TYPE_1,
+            initial: false,
+            hideMarkerOnCollapse: true,
+            propertyName: 'name_vi'}));
+        document.getElementsByClassName('search-button')[0].className +=
+         ' fa fa-binoculars';
+        var mapDiv = document.getElementById('map');
+        var row = document.createElement('div');
+        row.className="row";
+        row.id="all";
+        row.style.height = "100%";
+        var col1 = document.createElement('div');
+        col1.className="col9";
+        col1.id = "mapWindow";
+        col1.style.height = "99%";
+        col1.style.width = "80%";
+        col1.style.display = "inline-block";
+        var col2 = document.createElement('div');
+        col2.className="col3";
+        col2.id = "menu";
+        col2.style.display = "inline-block";
+        mapDiv.parentNode.insertBefore(row, mapDiv);
+        document.getElementById("all").appendChild(col1);
+        document.getElementById("all").appendChild(col2);
+        col1.appendChild(mapDiv)
+        var Filters = {"location": "str","type": "str","name_vi": "str"};
+        function filterFunc() {
+          map.eachLayer(function(lyr){
+          if ("options" in lyr && "dataVar" in lyr["options"]){
+            features = this[lyr["options"]["dataVar"]].features.slice(0);
+            try{
+              for (key in Filters){
+                keyS = key.replace(/[^a-zA-Z0-9_]/g, "")
+                if (Filters[key] == "str" || Filters[key] == "bool"){
+                  var selection = [];
+                  var options = document.getElementById("sel_" + keyS).options
+                  for (var i=0; i < options.length; i++) {
+                    if (options[i].selected) selection.push(options[i].value);
+                  }
+                    try{
+                      if (key in features[0].properties){
+                        for (i = features.length - 1;
+                          i >= 0; --i){
+                          if (selection.indexOf(
+                          features[i].properties[key])<0
+                          && selection.length>0) {
+                          features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                  }
+                }
+                if (Filters[key] == "int"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (parseInt(features[i].properties[key])
+                          < sliderVals[0]
+                          || parseInt(features[i].properties[key])
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "real"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (features[i].properties[key]
+                          < sliderVals[0]
+                          || features[i].properties[key]
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "date"
+                  || Filters[key] == "datetime"
+                  || Filters[key] == "time"){
+                  try{
+                    if (key in features[0].properties){
+                      HTMLkey = key.replace(/[&\/\\#,+()$~%.'":*?<>{} ]/g, '');
+                      startdate = document.getElementById("dat_" +
+                        HTMLkey + "_date1").value.replace(" ", "T");
+                      enddate = document.getElementById("dat_" +
+                        HTMLkey + "_date2").value.replace(" ", "T");
+                      for (i = features.length - 1; i >= 0; --i){
+                        if (features[i].properties[key] < startdate
+                          || features[i].properties[key] > enddate){
+                          features.splice(i,1);
+                        }
+                      }
+                    }
+                  } catch(err){
+                  }
+                }
+              }
+            } catch(err){
+            }
+          this[lyr["options"]["layerName"]].clearLayers();
+          this[lyr["options"]["layerName"]].addData(features);
+          }
+          })
+        }
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_location = document.createElement('div');
+            div_location.id = "div_location";
+            div_location.className= "filterselect";
+            document.getElementById("menu").appendChild(div_location);
+            sel_location = document.createElement('select');
+            sel_location.multiple = true;
+            sel_location.size = 6;
+            sel_location.id = "sel_location";
+            var location_options_str = "<option value='' unselected></option>";
+            sel_location.onchange = function(){filterFunc()};
+            location_options_str  += '<option value="approximate">approximate</option>';
+            location_options_str  += '<option value="freight">freight</option>';
+            location_options_str  += '<option value="parking">parking</option>';
+            location_options_str  += '<option value="ramp">ramp</option>';
+            location_options_str  += '<option value="runway">runway</option>';
+            location_options_str  += '<option value="terminal">terminal</option>';
+            sel_location.innerHTML = location_options_str;
+            div_location.appendChild(sel_location);
+            var lab_location = document.createElement('div');
+            lab_location.innerHTML = 'location';
+            lab_location.className = 'filterlabel';
+            div_location.appendChild(lab_location);
+            var reset_location = document.createElement('div');
+            reset_location.innerHTML = 'clear filter';
+            reset_location.className = 'filterlabel';
+            reset_location.onclick = function() {
+                var options = document.getElementById("sel_location").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_location.appendChild(reset_location);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_type = document.createElement('div');
+            div_type.id = "div_type";
+            div_type.className= "filterselect";
+            document.getElementById("menu").appendChild(div_type);
+            sel_type = document.createElement('select');
+            sel_type.multiple = true;
+            sel_type.size = 9;
+            sel_type.id = "sel_type";
+            var type_options_str = "<option value='' unselected></option>";
+            sel_type.onchange = function(){filterFunc()};
+            type_options_str  += '<option value="major">major</option>';
+            type_options_str  += '<option value="major and military">major and military</option>';
+            type_options_str  += '<option value="mid">mid</option>';
+            type_options_str  += '<option value="mid and military">mid and military</option>';
+            type_options_str  += '<option value="military">military</option>';
+            type_options_str  += '<option value="military major">military major</option>';
+            type_options_str  += '<option value="military mid">military mid</option>';
+            type_options_str  += '<option value="small">small</option>';
+            type_options_str  += '<option value="spaceport">spaceport</option>';
+            sel_type.innerHTML = type_options_str;
+            div_type.appendChild(sel_type);
+            var lab_type = document.createElement('div');
+            lab_type.innerHTML = 'type';
+            lab_type.className = 'filterlabel';
+            div_type.appendChild(lab_type);
+            var reset_type = document.createElement('div');
+            reset_type.innerHTML = 'clear filter';
+            reset_type.className = 'filterlabel';
+            reset_type.onclick = function() {
+                var options = document.getElementById("sel_type").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_type.appendChild(reset_type);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_name_vi = document.createElement('div');
+            div_name_vi.id = "div_name_vi";
+            div_name_vi.className= "filterselect";
+            document.getElementById("menu").appendChild(div_name_vi);
+            sel_name_vi = document.createElement('select');
+            sel_name_vi.multiple = true;
+            sel_name_vi.size = 10;
+            sel_name_vi.id = "sel_name_vi";
+            var name_vi_options_str = "<option value='' unselected></option>";
+            sel_name_vi.onchange = function(){filterFunc()};
+            name_vi_options_str  += '<option value="NULL">NULL</option>';
+            name_vi_options_str  += '<option value="Sân bay Aba Tenna Dejazmach Yilma">Sân bay Aba Tenna Dejazmach Yilma</option>';
+            name_vi_options_str  += '<option value="Sân bay Abdul Rachman Saleh">Sân bay Abdul Rachman Saleh</option>';
+            name_vi_options_str  += '<option value="Sân bay Achmad Yani">Sân bay Achmad Yani</option>';
+            name_vi_options_str  += '<option value="Sân bay Adana Şakirpaşa">Sân bay Adana Şakirpaşa</option>';
+            name_vi_options_str  += '<option value="Sân bay Agra">Sân bay Agra</option>';
+            name_vi_options_str  += '<option value="Sân bay Ahvaz">Sân bay Ahvaz</option>';
+            name_vi_options_str  += '<option value="Sân bay Alicante">Sân bay Alicante</option>';
+            name_vi_options_str  += '<option value="Sân bay Allahabad">Sân bay Allahabad</option>';
+            name_vi_options_str  += '<option value="Sân bay Almería">Sân bay Almería</option>';
+            name_vi_options_str  += '<option value="Sân bay Amsterdam Schiphol">Sân bay Amsterdam Schiphol</option>';
+            name_vi_options_str  += '<option value="Sân bay Antalya">Sân bay Antalya</option>';
+            name_vi_options_str  += '<option value="Sân bay Antonio Maceo">Sân bay Antonio Maceo</option>';
+            name_vi_options_str  += '<option value="Sân bay Ashgabat">Sân bay Ashgabat</option>';
+            name_vi_options_str  += '<option value="Sân bay Assiut">Sân bay Assiut</option>';
+            name_vi_options_str  += '<option value="Sân bay Auckland">Sân bay Auckland</option>';
+            name_vi_options_str  += '<option value="Sân bay Aurangabad">Sân bay Aurangabad</option>';
+            name_vi_options_str  += '<option value="Sân bay Barcelona">Sân bay Barcelona</option>';
+            name_vi_options_str  += '<option value="Sân bay Barnaul">Sân bay Barnaul</option>';
+            name_vi_options_str  += '<option value="Sân bay Belgrade Nikola Tesla">Sân bay Belgrade Nikola Tesla</option>';
+            name_vi_options_str  += '<option value="Sân bay Benin">Sân bay Benin</option>';
+            name_vi_options_str  += '<option value="Sân bay Bergen">Sân bay Bergen</option>';
+            name_vi_options_str  += '<option value="Sân bay Berlin Tegel">Sân bay Berlin Tegel</option>';
+            name_vi_options_str  += '<option value="Sân bay Bhopal">Sân bay Bhopal</option>';
+            name_vi_options_str  += '<option value="Sân bay Bilbao">Sân bay Bilbao</option>';
+            name_vi_options_str  += '<option value="Sân bay Birmingham">Sân bay Birmingham</option>';
+            name_vi_options_str  += '<option value="Sân bay Birsa Munda">Sân bay Birsa Munda</option>';
+            name_vi_options_str  += '<option value="Sân bay Bolshoye Savino">Sân bay Bolshoye Savino</option>';
+            name_vi_options_str  += '<option value="Sân bay Bordeaux - Mérignac">Sân bay Bordeaux - Mérignac</option>';
+            name_vi_options_str  += '<option value="Sân bay Borg El Arab">Sân bay Borg El Arab</option>';
+            name_vi_options_str  += '<option value="Sân bay Bremen">Sân bay Bremen</option>';
+            name_vi_options_str  += '<option value="Sân bay Brisbane">Sân bay Brisbane</option>';
+            name_vi_options_str  += '<option value="Sân bay Bristol">Sân bay Bristol</option>';
+            name_vi_options_str  += '<option value="Sân bay Brussels">Sân bay Brussels</option>';
+            name_vi_options_str  += '<option value="Sân bay Burgas">Sân bay Burgas</option>';
+            name_vi_options_str  += '<option value="Sân bay Cadjehoun">Sân bay Cadjehoun</option>';
+            name_vi_options_str  += '<option value="Sân bay Cairns">Sân bay Cairns</option>';
+            name_vi_options_str  += '<option value="Sân bay Cannes - Mandelieu">Sân bay Cannes - Mandelieu</option>';
+            name_vi_options_str  += '<option value="Sân bay Cardiff">Sân bay Cardiff</option>';
+            name_vi_options_str  += '<option value="Sân bay Catania-Fontanarossa">Sân bay Catania-Fontanarossa</option>';
+            name_vi_options_str  += '<option value="Sân bay Cayenne-Rochambeau">Sân bay Cayenne-Rochambeau</option>';
+            name_vi_options_str  += '<option value="Sân bay Chelyabinsk">Sân bay Chelyabinsk</option>';
+            name_vi_options_str  += '<option value="Sân bay Cheongju">Sân bay Cheongju</option>';
+            name_vi_options_str  += '<option value="Sân bay Coimbatore">Sân bay Coimbatore</option>';
+            name_vi_options_str  += '<option value="Sân bay Colorado Springs">Sân bay Colorado Springs</option>';
+            name_vi_options_str  += '<option value="Sân bay Copenhagen">Sân bay Copenhagen</option>';
+            name_vi_options_str  += '<option value="Sân bay Cork">Sân bay Cork</option>';
+            name_vi_options_str  += '<option value="Sân bay Daegu">Sân bay Daegu</option>';
+            name_vi_options_str  += '<option value="Sân bay Dallas Love">Sân bay Dallas Love</option>';
+            name_vi_options_str  += '<option value="Sân bay Deauville - Saint-Gatien">Sân bay Deauville - Saint-Gatien</option>';
+            name_vi_options_str  += '<option value="Sân bay Dresden">Sân bay Dresden</option>';
+            name_vi_options_str  += '<option value="Sân bay Dublin">Sân bay Dublin</option>';
+            name_vi_options_str  += '<option value="Sân bay Edinburgh">Sân bay Edinburgh</option>';
+            name_vi_options_str  += '<option value="Sân bay Eurico de Aguiar Salles">Sân bay Eurico de Aguiar Salles</option>';
+            name_vi_options_str  += '<option value="Sân bay Fort St. John">Sân bay Fort St. John</option>';
+            name_vi_options_str  += '<option value="Sân bay Francisco de Sá Carneiro">Sân bay Francisco de Sá Carneiro</option>';
+            name_vi_options_str  += '<option value="Sân bay Frédéric Chopin Warszawa">Sân bay Frédéric Chopin Warszawa</option>';
+            name_vi_options_str  += '<option value="Sân bay Fukuoka">Sân bay Fukuoka</option>';
+            name_vi_options_str  += '<option value="Sân bay Gatwick">Sân bay Gatwick</option>';
+            name_vi_options_str  += '<option value="Sân bay Gdańsk Lech Wałęsa">Sân bay Gdańsk Lech Wałęsa</option>';
+            name_vi_options_str  += '<option value="Sân bay Giai Mộc Tư">Sân bay Giai Mộc Tư</option>';
+            name_vi_options_str  += '<option value="Sân bay Gold Coast">Sân bay Gold Coast</option>';
+            name_vi_options_str  += '<option value="Sân bay Gonggar Lhasa">Sân bay Gonggar Lhasa</option>';
+            name_vi_options_str  += '<option value="Sân bay Gran Canaria">Sân bay Gran Canaria</option>';
+            name_vi_options_str  += '<option value="Sân bay Gwalior">Sân bay Gwalior</option>';
+            name_vi_options_str  += '<option value="Sân bay Gwangju">Sân bay Gwangju</option>';
+            name_vi_options_str  += '<option value="Sân bay Göteborg-Landvetter">Sân bay Göteborg-Landvetter</option>';
+            name_vi_options_str  += '<option value="Sân bay Hamburg">Sân bay Hamburg</option>';
+            name_vi_options_str  += '<option value="Sân bay Hasanuddin">Sân bay Hasanuddin</option>';
+            name_vi_options_str  += '<option value="Sân bay Helsinki-Malmi">Sân bay Helsinki-Malmi</option>';
+            name_vi_options_str  += '<option value="Sân bay Helsinki-Vantaa">Sân bay Helsinki-Vantaa</option>';
+            name_vi_options_str  += '<option value="Sân bay Hiroshima-Nishi">Sân bay Hiroshima-Nishi</option>';
+            name_vi_options_str  += '<option value="Sân bay Houari Boumedienne">Sân bay Houari Boumedienne</option>';
+            name_vi_options_str  += '<option value="Sân bay Ivato">Sân bay Ivato</option>';
+            name_vi_options_str  += '<option value="Sân bay Jabalpur">Sân bay Jabalpur</option>';
+            name_vi_options_str  += '<option value="Sân bay Jaipur">Sân bay Jaipur</option>';
+            name_vi_options_str  += '<option value="Sân bay Jammu">Sân bay Jammu</option>';
+            name_vi_options_str  += '<option value="Sân bay John Lennon Liverpool">Sân bay John Lennon Liverpool</option>';
+            name_vi_options_str  += '<option value="Sân bay John Wayne">Sân bay John Wayne</option>';
+            name_vi_options_str  += '<option value="Sân bay Joinville-Lauro Carneiro de Loyola">Sân bay Joinville-Lauro Carneiro de Loyola</option>';
+            name_vi_options_str  += '<option value="Sân bay João Paulo II">Sân bay João Paulo II</option>';
+            name_vi_options_str  += '<option value="Sân bay Juan Gualberto Gómez">Sân bay Juan Gualberto Gómez</option>';
+            name_vi_options_str  += '<option value="Sân bay Kahului">Sân bay Kahului</option>';
+            name_vi_options_str  += '<option value="Sân bay Kangerlussuaq">Sân bay Kangerlussuaq</option>';
+            name_vi_options_str  += '<option value="Sân bay Kirkenes">Sân bay Kirkenes</option>';
+            name_vi_options_str  += '<option value="Sân bay Kirkwall">Sân bay Kirkwall</option>';
+            name_vi_options_str  += '<option value="Sân bay Kiruna">Sân bay Kiruna</option>';
+            name_vi_options_str  += '<option value="Sân bay Konya">Sân bay Konya</option>';
+            name_vi_options_str  += '<option value="Sân bay Köln/Bonn">Sân bay Köln/Bonn</option>';
+            name_vi_options_str  += '<option value="Sân bay LaGuardia">Sân bay LaGuardia</option>';
+            name_vi_options_str  += '<option value="Sân bay Lille">Sân bay Lille</option>';
+            name_vi_options_str  += '<option value="Sân bay Lisboa Portela">Sân bay Lisboa Portela</option>';
+            name_vi_options_str  += '<option value="Sân bay Little Rock">Sân bay Little Rock</option>';
+            name_vi_options_str  += '<option value="Sân bay Ljubljana Jože Pučnik">Sân bay Ljubljana Jože Pučnik</option>';
+            name_vi_options_str  += '<option value="Sân bay Lok Nayak Jayaprakash">Sân bay Lok Nayak Jayaprakash</option>';
+            name_vi_options_str  += '<option value="Sân bay Lomé-Tokoin">Sân bay Lomé-Tokoin</option>';
+            name_vi_options_str  += '<option value="Sân bay London Heathrow">Sân bay London Heathrow</option>';
+            name_vi_options_str  += '<option value="Sân bay Luleå">Sân bay Luleå</option>';
+            name_vi_options_str  += '<option value="Sân bay Luton London">Sân bay Luton London</option>';
+            name_vi_options_str  += '<option value="Sân bay M. R. Štefánik">Sân bay M. R. Štefánik</option>';
+            name_vi_options_str  += '<option value="Sân bay Madeira">Sân bay Madeira</option>';
+            name_vi_options_str  += '<option value="Sân bay Manchester">Sân bay Manchester</option>';
+            name_vi_options_str  += '<option value="Sân bay Marechal Rondon">Sân bay Marechal Rondon</option>';
+            name_vi_options_str  += '<option value="Sân bay Marseille Provence">Sân bay Marseille Provence</option>';
+            name_vi_options_str  += '<option value="Sân bay Melbourne">Sân bay Melbourne</option>';
+            name_vi_options_str  += '<option value="Sân bay Milano-Linate">Sân bay Milano-Linate</option>';
+            name_vi_options_str  += '<option value="Sân bay Nagoya">Sân bay Nagoya</option>';
+            name_vi_options_str  += '<option value="Sân bay Newcastle">Sân bay Newcastle</option>';
+            name_vi_options_str  += '<option value="Sân bay Norrköping">Sân bay Norrköping</option>';
+            name_vi_options_str  += '<option value="Sân bay Nova Lisboa">Sân bay Nova Lisboa</option>';
+            name_vi_options_str  += '<option value="Sân bay Nuremberg">Sân bay Nuremberg</option>';
+            name_vi_options_str  += '<option value="Sân bay Orio al Serio">Sân bay Orio al Serio</option>';
+            name_vi_options_str  += '<option value="Sân bay Orly">Sân bay Orly</option>';
+            name_vi_options_str  += '<option value="Sân bay Oslo">Sân bay Oslo</option>';
+            name_vi_options_str  += '<option value="Sân bay Ouagadougou">Sân bay Ouagadougou</option>';
+            name_vi_options_str  += '<option value="Sân bay Oulu">Sân bay Oulu</option>';
+            name_vi_options_str  += '<option value="Sân bay Oğuzeli">Sân bay Oğuzeli</option>';
+            name_vi_options_str  += '<option value="Sân bay Palma de Mallorca">Sân bay Palma de Mallorca</option>';
+            name_vi_options_str  += '<option value="Sân bay Perth">Sân bay Perth</option>';
+            name_vi_options_str  += '<option value="Sân bay Podgorica">Sân bay Podgorica</option>';
+            name_vi_options_str  += '<option value="Sân bay Port Bouet">Sân bay Port Bouet</option>';
+            name_vi_options_str  += '<option value="Sân bay Port Elizabeth">Sân bay Port Elizabeth</option>';
+            name_vi_options_str  += '<option value="Sân bay Pulkovo">Sân bay Pulkovo</option>';
+            name_vi_options_str  += '<option value="Sân bay Quatro de Fevereiro">Sân bay Quatro de Fevereiro</option>';
+            name_vi_options_str  += '<option value="Sân bay Quốc tế Domodedovo">Sân bay Quốc tế Domodedovo</option>';
+            name_vi_options_str  += '<option value="Sân bay Quốc tế José Martí">Sân bay Quốc tế José Martí</option>';
+            name_vi_options_str  += '<option value="Sân bay Quốc tế La Tontouta">Sân bay Quốc tế La Tontouta</option>';
+            name_vi_options_str  += '<option value="Sân bay Quốc tế O&apos;Hare">Sân bay Quốc tế O&apos;Hare</option>';
+            name_vi_options_str  += '<option value="Sân bay Quốc tế Rota">Sân bay Quốc tế Rota</option>';
+            name_vi_options_str  += '<option value="Sân bay Radin Inten II">Sân bay Radin Inten II</option>';
+            name_vi_options_str  += '<option value="Sân bay Raipur">Sân bay Raipur</option>';
+            name_vi_options_str  += '<option value="Sân bay Reykjavík">Sân bay Reykjavík</option>';
+            name_vi_options_str  += '<option value="Sân bay Rostov-na-Donu">Sân bay Rostov-na-Donu</option>';
+            name_vi_options_str  += '<option value="Sân bay Rotterdam">Sân bay Rotterdam</option>';
+            name_vi_options_str  += '<option value="Sân bay Rovaniemi">Sân bay Rovaniemi</option>';
+            name_vi_options_str  += '<option value="Sân bay Santa Barbara">Sân bay Santa Barbara</option>';
+            name_vi_options_str  += '<option value="Sân bay Santa Genoveva">Sân bay Santa Genoveva</option>';
+            name_vi_options_str  += '<option value="Sân bay Saratov Tsentralny">Sân bay Saratov Tsentralny</option>';
+            name_vi_options_str  += '<option value="Sân bay Saïss">Sân bay Saïss</option>';
+            name_vi_options_str  += '<option value="Sân bay Sendai">Sân bay Sendai</option>';
+            name_vi_options_str  += '<option value="Sân bay Shahid Ashrafi Esfahani">Sân bay Shahid Ashrafi Esfahani</option>';
+            name_vi_options_str  += '<option value="Sân bay Shannon">Sân bay Shannon</option>';
+            name_vi_options_str  += '<option value="Sân bay Sofia">Sân bay Sofia</option>';
+            name_vi_options_str  += '<option value="Sân bay Srinagar">Sân bay Srinagar</option>';
+            name_vi_options_str  += '<option value="Sân bay Stavanger">Sân bay Stavanger</option>';
+            name_vi_options_str  += '<option value="Sân bay Stockholm-Arlanda">Sân bay Stockholm-Arlanda</option>';
+            name_vi_options_str  += '<option value="Sân bay Stockholm-Bromma">Sân bay Stockholm-Bromma</option>';
+            name_vi_options_str  += '<option value="Sân bay Stockholm-Skavsta">Sân bay Stockholm-Skavsta</option>';
+            name_vi_options_str  += '<option value="Sân bay Strasbourg">Sân bay Strasbourg</option>';
+            name_vi_options_str  += '<option value="Sân bay Stuttgart">Sân bay Stuttgart</option>';
+            name_vi_options_str  += '<option value="Sân bay Sultan Mahmud Badaruddin II">Sân bay Sultan Mahmud Badaruddin II</option>';
+            name_vi_options_str  += '<option value="Sân bay Surat">Sân bay Surat</option>';
+            name_vi_options_str  += '<option value="Sân bay Svalbard">Sân bay Svalbard</option>';
+            name_vi_options_str  += '<option value="Sân bay Talagi">Sân bay Talagi</option>';
+            name_vi_options_str  += '<option value="Sân bay Tallinn">Sân bay Tallinn</option>';
+            name_vi_options_str  += '<option value="Sân bay Tenerife Norte">Sân bay Tenerife Norte</option>';
+            name_vi_options_str  += '<option value="Sân bay Teresina">Sân bay Teresina</option>';
+            name_vi_options_str  += '<option value="Sân bay Thompson">Sân bay Thompson</option>';
+            name_vi_options_str  += '<option value="Sân bay Timmins">Sân bay Timmins</option>';
+            name_vi_options_str  += '<option value="Sân bay Tolmachevo">Sân bay Tolmachevo</option>';
+            name_vi_options_str  += '<option value="Sân bay Tromsø">Sân bay Tromsø</option>';
+            name_vi_options_str  += '<option value="Sân bay Trondheim">Sân bay Trondheim</option>';
+            name_vi_options_str  += '<option value="Sân bay Trung Xuyên Lan Châu">Sân bay Trung Xuyên Lan Châu</option>';
+            name_vi_options_str  += '<option value="Sân bay Tsentralny">Sân bay Tsentralny</option>';
+            name_vi_options_str  += '<option value="Sân bay Ulsan">Sân bay Ulsan</option>';
+            name_vi_options_str  += '<option value="Sân bay Vadodara">Sân bay Vadodara</option>';
+            name_vi_options_str  += '<option value="Sân bay Valencia">Sân bay Valencia</option>';
+            name_vi_options_str  += '<option value="Sân bay Varanasi">Sân bay Varanasi</option>';
+            name_vi_options_str  += '<option value="Sân bay Vijayawada">Sân bay Vijayawada</option>';
+            name_vi_options_str  += '<option value="Sân bay Visakhapatnam">Sân bay Visakhapatnam</option>';
+            name_vi_options_str  += '<option value="Sân bay Vágar">Sân bay Vágar</option>';
+            name_vi_options_str  += '<option value="Sân bay Yellowknife">Sân bay Yellowknife</option>';
+            name_vi_options_str  += '<option value="Sân bay Yenişehir">Sân bay Yenişehir</option>';
+            name_vi_options_str  += '<option value="Sân bay Yuzhny">Sân bay Yuzhny</option>';
+            name_vi_options_str  += '<option value="Sân bay Zagreb">Sân bay Zagreb</option>';
+            name_vi_options_str  += '<option value="Sân bay Zhulyany Kiev">Sân bay Zhulyany Kiev</option>';
+            name_vi_options_str  += '<option value="Sân bay Zürich">Sân bay Zürich</option>';
+            name_vi_options_str  += '<option value="Sân bay liên lục địa George Bush">Sân bay liên lục địa George Bush</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc gia Ronald Reagan Washington">Sân bay quốc gia Ronald Reagan Washington</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Abraham González">Sân bay quốc tế Abraham González</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Abu Dhabi">Sân bay quốc tế Abu Dhabi</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Adelaide">Sân bay quốc tế Adelaide</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Aden">Sân bay quốc tế Aden</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Aden Adde">Sân bay quốc tế Aden Adde</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Adnan Menderes">Sân bay quốc tế Adnan Menderes</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Afonso Pena">Sân bay quốc tế Afonso Pena</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Albany">Sân bay quốc tế Albany</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Albuquerque">Sân bay quốc tế Albuquerque</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Alejandro Velasco Astete">Sân bay quốc tế Alejandro Velasco Astete</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Aleppo">Sân bay quốc tế Aleppo</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Alfonso Bonilla Aragón">Sân bay quốc tế Alfonso Bonilla Aragón</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Allama Iqbal">Sân bay quốc tế Allama Iqbal</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Almaty">Sân bay quốc tế Almaty</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Amausi">Sân bay quốc tế Amausi</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Angkor">Sân bay quốc tế Angkor</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Antonio B. Won Pat">Sân bay quốc tế Antonio B. Won Pat</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Antwerp">Sân bay quốc tế Antwerp</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Arturo Michelena">Sân bay quốc tế Arturo Michelena</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Asmara">Sân bay quốc tế Asmara</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Aswan">Sân bay quốc tế Aswan</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Atar">Sân bay quốc tế Atar</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Atatürk">Sân bay quốc tế Atatürk</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Athena">Sân bay quốc tế Athena</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Augusto C. Sandino">Sân bay quốc tế Augusto C. Sandino</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Augusto Severo">Sân bay quốc tế Augusto Severo</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Austin-Bergstrom">Sân bay quốc tế Austin-Bergstrom</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Bagdad">Sân bay quốc tế Bagdad</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Bahrain">Sân bay quốc tế Bahrain</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Baltimore-Washington Thurgood Marshall">Sân bay quốc tế Baltimore-Washington Thurgood Marshall</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Bandar Abbas">Sân bay quốc tế Bandar Abbas</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Bandaranaike">Sân bay quốc tế Bandaranaike</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Bangoka">Sân bay quốc tế Bangoka</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Bangui M&apos;Poko">Sân bay quốc tế Bangui M&apos;Poko</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Banjul">Sân bay quốc tế Banjul</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Basrah">Sân bay quốc tế Basrah</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Bassel Al-Assad">Sân bay quốc tế Bassel Al-Assad</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Beirut Rafic Hariri">Sân bay quốc tế Beirut Rafic Hariri</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Belfast">Sân bay quốc tế Belfast</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ben Gurion">Sân bay quốc tế Ben Gurion</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Benazir Bhutto">Sân bay quốc tế Benazir Bhutto</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Bengaluru">Sân bay quốc tế Bengaluru</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Benina">Sân bay quốc tế Benina</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Birmingham">Sân bay quốc tế Birmingham</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Boa Vista">Sân bay quốc tế Boa Vista</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Bole">Sân bay quốc tế Bole</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Bonriki">Sân bay quốc tế Bonriki</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Boryspil">Sân bay quốc tế Boryspil</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Bradley">Sân bay quốc tế Bradley</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Brasília">Sân bay quốc tế Brasília</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Broome">Sân bay quốc tế Broome</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Brunei">Sân bay quốc tế Brunei</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Budapest Ferihegy">Sân bay quốc tế Budapest Ferihegy</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Bujumbura">Sân bay quốc tế Bujumbura</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Bạch Tháp Hô Hòa Hạo Đặc">Sân bay quốc tế Bạch Tháp Hô Hòa Hạo Đặc</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Bạch Vân Quảng Châu">Sân bay quốc tế Bạch Vân Quảng Châu</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Bảo An Thâm Quyến">Sân bay quốc tế Bảo An Thâm Quyến</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Cairo">Sân bay quốc tế Cairo</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Calgary">Sân bay quốc tế Calgary</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Calicut">Sân bay quốc tế Calicut</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Campo Grande">Sân bay quốc tế Campo Grande</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Canberra">Sân bay quốc tế Canberra</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Cancún">Sân bay quốc tế Cancún</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Cao Hùng">Sân bay quốc tế Cao Hùng</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Cao Khi Hạ Môn">Sân bay quốc tế Cao Khi Hạ Môn</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Cape Town">Sân bay quốc tế Cape Town</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Carlos Ibanez Del Campo">Sân bay quốc tế Carlos Ibanez Del Campo</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Carlos Rovirosa Pérez">Sân bay quốc tế Carlos Rovirosa Pérez</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Carrasco">Sân bay quốc tế Carrasco</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Cerro Moreno">Sân bay quốc tế Cerro Moreno</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Chacalluta">Sân bay quốc tế Chacalluta</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Charles-de-Gaulle">Sân bay quốc tế Charles-de-Gaulle</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Charleston">Sân bay quốc tế Charleston</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Charlotte/Douglas">Sân bay quốc tế Charlotte/Douglas</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Cheddi Jagan">Sân bay quốc tế Cheddi Jagan</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Chennai">Sân bay quốc tế Chennai</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Chetumal">Sân bay quốc tế Chetumal</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Chhatrapati Shivaji">Sân bay quốc tế Chhatrapati Shivaji</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Chiang Mai">Sân bay quốc tế Chiang Mai</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Chicago Midway">Sân bay quốc tế Chicago Midway</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Chileka">Sân bay quốc tế Chileka</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Chișinău">Sân bay quốc tế Chișinău</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Christchurch">Sân bay quốc tế Christchurch</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Chu Thủy Tử Đại Liên">Sân bay quốc tế Chu Thủy Tử Đại Liên</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Chubu">Sân bay quốc tế Chubu</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Chuuk">Sân bay quốc tế Chuuk</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Chính Định Thạch Gia Trang">Sân bay quốc tế Chính Định Thạch Gia Trang</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Cincinnati/Bắc Kentucky">Sân bay quốc tế Cincinnati/Bắc Kentucky</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Clark">Sân bay quốc tế Clark</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Cleveland Hopkins">Sân bay quốc tế Cleveland Hopkins</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Cochin">Sân bay quốc tế Cochin</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Comodoro Arturo Merino Benítez">Sân bay quốc tế Comodoro Arturo Merino Benítez</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Conakry">Sân bay quốc tế Conakry</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Congonhas-São Paulo">Sân bay quốc tế Congonhas-São Paulo</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Corfu">Sân bay quốc tế Corfu</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Corumbá">Sân bay quốc tế Corumbá</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Cozumel">Sân bay quốc tế Cozumel</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Dakar-Yoff-Léopold Sédar Senghor">Sân bay quốc tế Dakar-Yoff-Léopold Sédar Senghor</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Dallas-Forth Worth">Sân bay quốc tế Dallas-Forth Worth</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Damascus">Sân bay quốc tế Damascus</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Darwin">Sân bay quốc tế Darwin</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Dayton">Sân bay quốc tế Dayton</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Del Bajío">Sân bay quốc tế Del Bajío</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Denver">Sân bay quốc tế Denver</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Deputado Luís Eduardo Magalhães">Sân bay quốc tế Deputado Luís Eduardo Magalhães</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Des Moines">Sân bay quốc tế Des Moines</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Detroit">Sân bay quốc tế Detroit</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Devi Ahilyabai Holkar">Sân bay quốc tế Devi Ahilyabai Holkar</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Diego Aracena">Sân bay quốc tế Diego Aracena</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Diori Hamani">Sân bay quốc tế Diori Hamani</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Diwopu Ürümqi">Sân bay quốc tế Diwopu Ürümqi</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Djibouti-Ambouli">Sân bay quốc tế Djibouti-Ambouli</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Dnipropetrovsk">Sân bay quốc tế Dnipropetrovsk</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Doha">Sân bay quốc tế Doha</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Don Mueang">Sân bay quốc tế Don Mueang</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Donetsk">Sân bay quốc tế Donetsk</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Dr. Babasaheb Ambedkar">Sân bay quốc tế Dr. Babasaheb Ambedkar</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Dubai">Sân bay quốc tế Dubai</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Dunedin">Sân bay quốc tế Dunedin</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Durban">Sân bay quốc tế Durban</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Dzaoudzi Pamandzi">Sân bay quốc tế Dzaoudzi Pamandzi</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Düsseldorf">Sân bay quốc tế Düsseldorf</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Edmonton">Sân bay quốc tế Edmonton</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Eduardo Gomes">Sân bay quốc tế Eduardo Gomes</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế El Alto">Sân bay quốc tế El Alto</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế El Dorado">Sân bay quốc tế El Dorado</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế El Paso">Sân bay quốc tế El Paso</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế El Salvador">Sân bay quốc tế El Salvador</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Eldoret">Sân bay quốc tế Eldoret</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Entebbe">Sân bay quốc tế Entebbe</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ernesto Cortissoz">Sân bay quốc tế Ernesto Cortissoz</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Esenboğa">Sân bay quốc tế Esenboğa</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Exuma">Sân bay quốc tế Exuma</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Faa&apos;a">Sân bay quốc tế Faa&apos;a</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Fairbanks">Sân bay quốc tế Fairbanks</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Faisalabad">Sân bay quốc tế Faisalabad</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Federal de Bachigualato">Sân bay quốc tế Federal de Bachigualato</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Federal del Valle del Fuerte">Sân bay quốc tế Federal del Valle del Fuerte</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Fort Lauderdale – Hollywood">Sân bay quốc tế Fort Lauderdale – Hollywood</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Fort McMurray">Sân bay quốc tế Fort McMurray</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Foz do Iguaçu">Sân bay quốc tế Foz do Iguaçu</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Francisco Bangoy">Sân bay quốc tế Francisco Bangoy</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Francisco Sarabia">Sân bay quốc tế Francisco Sarabia</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Frankfurt">Sân bay quốc tế Frankfurt</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Fresno Yosemite">Sân bay quốc tế Fresno Yosemite</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Galileo Galilei">Sân bay quốc tế Galileo Galilei</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế General Mitchell">Sân bay quốc tế General Mitchell</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Geneva Cointrin">Sân bay quốc tế Geneva Cointrin</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Gerald R. Ford">Sân bay quốc tế Gerald R. Ford</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Giang Bắc Trùng Khánh">Sân bay quốc tế Giang Bắc Trùng Khánh</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Gibraltar">Sân bay quốc tế Gibraltar</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Gimhae">Sân bay quốc tế Gimhae</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Gimpo">Sân bay quốc tế Gimpo</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Glasgow">Sân bay quốc tế Glasgow</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Gobernador Horacio Guzmán">Sân bay quốc tế Gobernador Horacio Guzmán</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Golosón">Sân bay quốc tế Golosón</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Goma">Sân bay quốc tế Goma</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Governador Jorge Teixeira de Oliveira">Sân bay quốc tế Governador Jorge Teixeira de Oliveira</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Grand Bahama">Sân bay quốc tế Grand Bahama</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Grantley Adams">Sân bay quốc tế Grantley Adams</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Guadalajara">Sân bay quốc tế Guadalajara</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Guarani">Sân bay quốc tế Guarani</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Hamilton">Sân bay quốc tế Hamilton</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Harare">Sân bay quốc tế Harare</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Hartsfield-Jackson Atlanta">Sân bay quốc tế Hartsfield-Jackson Atlanta</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Hat Yai">Sân bay quốc tế Hat Yai</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Hato">Sân bay quốc tế Hato</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Heraklion">Sân bay quốc tế Heraklion</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Hercílio Luz">Sân bay quốc tế Hercílio Luz</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Hermanos Serdán">Sân bay quốc tế Hermanos Serdán</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Hermes Quijada">Sân bay quốc tế Hermes Quijada</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Heydar Aliyev">Sân bay quốc tế Heydar Aliyev</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Hobart">Sân bay quốc tế Hobart</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Honolulu">Sân bay quốc tế Honolulu</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Hoàng Hoa Trường Sa">Sân bay quốc tế Hoàng Hoa Trường Sa</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Huntsville">Sân bay quốc tế Huntsville</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Hurghada">Sân bay quốc tế Hurghada</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Husein Sastranegara">Sân bay quốc tế Husein Sastranegara</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Hàm Dương Tây An">Sân bay quốc tế Hàm Dương Tây An</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Hải Lãng Mẫu Đơn Giang">Sân bay quốc tế Hải Lãng Mẫu Đơn Giang</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Hồng Kiều Thượng Hải">Sân bay quốc tế Hồng Kiều Thượng Hải</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Hồng Kông">Sân bay quốc tế Hồng Kông</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ibn Batouta">Sân bay quốc tế Ibn Batouta</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ignacio Agramonte">Sân bay quốc tế Ignacio Agramonte</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ilorin">Sân bay quốc tế Ilorin</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Incheon">Sân bay quốc tế Incheon</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Indianapolis">Sân bay quốc tế Indianapolis</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Indira Gandhi">Sân bay quốc tế Indira Gandhi</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ing. Alberto Acuña Ongay">Sân bay quốc tế Ing. Alberto Acuña Ongay</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Irkutsk">Sân bay quốc tế Irkutsk</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Isfahan">Sân bay quốc tế Isfahan</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Jacinto Lara">Sân bay quốc tế Jacinto Lara</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Jackson-Evers">Sân bay quốc tế Jackson-Evers</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Jacksons">Sân bay quốc tế Jacksons</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Jacksonville">Sân bay quốc tế Jacksonville</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Jeju">Sân bay quốc tế Jeju</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Jinnah">Sân bay quốc tế Jinnah</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Johan Adolf Pengel">Sân bay quốc tế Johan Adolf Pengel</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế John F. Kennedy">Sân bay quốc tế John F. Kennedy</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Jomo Kenyatta">Sân bay quốc tế Jomo Kenyatta</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Jorge Chávez">Sân bay quốc tế Jorge Chávez</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Joshua Mqabuko Nkomo">Sân bay quốc tế Joshua Mqabuko Nkomo</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế José Joaquín de Olmedo">Sân bay quốc tế José Joaquín de Olmedo</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế José María Córdova">Sân bay quốc tế José María Córdova</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế José María Yáñez">Sân bay quốc tế José María Yáñez</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Juana Azurduy de Padilla">Sân bay quốc tế Juana Azurduy de Padilla</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Juanda">Sân bay quốc tế Juanda</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Kabul">Sân bay quốc tế Kabul</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Kansai">Sân bay quốc tế Kansai</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Kansas City">Sân bay quốc tế Kansas City</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Kazan">Sân bay quốc tế Kazan</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Khartoum">Sân bay quốc tế Khartoum</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Kigali">Sân bay quốc tế Kigali</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Kingsfort Smith">Sân bay quốc tế Kingsfort Smith</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Kinshasa">Sân bay quốc tế Kinshasa</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Koltsovo">Sân bay quốc tế Koltsovo</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Kona">Sân bay quốc tế Kona</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Kosrae">Sân bay quốc tế Kosrae</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Kota Kinabalu">Sân bay quốc tế Kota Kinabalu</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Kotoka">Sân bay quốc tế Kotoka</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Kraków John Paul II">Sân bay quốc tế Kraków John Paul II</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Kuala Lumpur">Sân bay quốc tế Kuala Lumpur</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Kuching">Sân bay quốc tế Kuching</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Kurumoch">Sân bay quốc tế Kurumoch</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Kuwait">Sân bay quốc tế Kuwait</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế LA/Ontario">Sân bay quốc tế LA/Ontario</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế La Aurora">Sân bay quốc tế La Aurora</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế La Chinita">Sân bay quốc tế La Chinita</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Lai Sơn Yên Đài">Sân bay quốc tế Lai Sơn Yên Đài</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Lambert-St. Louis">Sân bay quốc tế Lambert-St. Louis</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Laoag">Sân bay quốc tế Laoag</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Leeds Bradford">Sân bay quốc tế Leeds Bradford</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Leonardo da Vinci">Sân bay quốc tế Leonardo da Vinci</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Libreville">Sân bay quốc tế Libreville</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Lic. Adolfo López Mateos">Sân bay quốc tế Lic. Adolfo López Mateos</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Lic. Jesús Terán Peredo">Sân bay quốc tế Lic. Jesús Terán Peredo</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Lilongwe">Sân bay quốc tế Lilongwe</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Logan">Sân bay quốc tế Logan</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Lokpriya Gopinath Bordoloi">Sân bay quốc tế Lokpriya Gopinath Bordoloi</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Long Gia Trường Xuân">Sân bay quốc tế Long Gia Trường Xuân</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Los Angeles">Sân bay quốc tế Los Angeles</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Los Cabos">Sân bay quốc tế Los Cabos</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Louis Armstrong New Orleans">Sân bay quốc tế Louis Armstrong New Orleans</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Louisville">Sân bay quốc tế Louisville</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Lubumbashi">Sân bay quốc tế Lubumbashi</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Luis Muñoz Marín">Sân bay quốc tế Luis Muñoz Marín</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Lungi">Sân bay quốc tế Lungi</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Luxembourg-Findel">Sân bay quốc tế Luxembourg-Findel</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Luxor">Sân bay quốc tế Luxor</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Lviv">Sân bay quốc tế Lviv</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Lynden Pindling">Sân bay quốc tế Lynden Pindling</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Lưu Đình Thanh Đảo">Sân bay quốc tế Lưu Đình Thanh Đảo</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Lưỡng Giang Quế Lâm">Sân bay quốc tế Lưỡng Giang Quế Lâm</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Lạc Cương Hợp Phì">Sân bay quốc tế Lạc Cương Hợp Phì</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Lịch Xã Ninh Ba">Sân bay quốc tế Lịch Xã Ninh Ba</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Lộc Khẩu Nam Kinh">Sân bay quốc tế Lộc Khẩu Nam Kinh</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ma Cao">Sân bay quốc tế Ma Cao</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Mactan-Cebu">Sân bay quốc tế Mactan-Cebu</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Madrid Barajas">Sân bay quốc tế Madrid Barajas</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Malpensa">Sân bay quốc tế Malpensa</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Malta">Sân bay quốc tế Malta</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Malé">Sân bay quốc tế Malé</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Manas">Sân bay quốc tế Manas</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Mandalay">Sân bay quốc tế Mandalay</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Manuel Crescencio Rejón">Sân bay quốc tế Manuel Crescencio Rejón</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Manuel Márquez de León">Sân bay quốc tế Manuel Márquez de León</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Maputo">Sân bay quốc tế Maputo</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Marco Polo">Sân bay quốc tế Marco Polo</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Marechal Cunha Machado">Sân bay quốc tế Marechal Cunha Machado</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Mariscal Sucre">Sân bay quốc tế Mariscal Sucre</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Mataveri">Sân bay quốc tế Mataveri</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế McCarran">Sân bay quốc tế McCarran</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Mehrabad">Sân bay quốc tế Mehrabad</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Memphis">Sân bay quốc tế Memphis</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Menara">Sân bay quốc tế Menara</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Miami">Sân bay quốc tế Miami</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Minangkabau">Sân bay quốc tế Minangkabau</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ministro Pistarini">Sân bay quốc tế Ministro Pistarini</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Minneapolis−Saint Paul">Sân bay quốc tế Minneapolis−Saint Paul</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Minsk">Sân bay quốc tế Minsk</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Mohamed Boudiaf">Sân bay quốc tế Mohamed Boudiaf</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Mohammed V">Sân bay quốc tế Mohammed V</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Moi">Sân bay quốc tế Moi</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Monastir">Sân bay quốc tế Monastir</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Montréal-Mirabel">Sân bay quốc tế Montréal-Mirabel</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Moshoeshoe I">Sân bay quốc tế Moshoeshoe I</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Mundo Maya">Sân bay quốc tế Mundo Maya</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Murtala Muhammed">Sân bay quốc tế Murtala Muhammed</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Muscat">Sân bay quốc tế Muscat</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế München Franz Josef Strauss">Sân bay quốc tế München Franz Josef Strauss</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế N&apos;Djamena">Sân bay quốc tế N&apos;Djamena</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Nadi">Sân bay quốc tế Nadi</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Napoli">Sân bay quốc tế Napoli</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Narita">Sân bay quốc tế Narita</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Nashville">Sân bay quốc tế Nashville</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Nauru">Sân bay quốc tế Nauru</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Netaji Subhash Chandra Bose">Sân bay quốc tế Netaji Subhash Chandra Bose</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Newark Liberty">Sân bay quốc tế Newark Liberty</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ngurah Rai">Sân bay quốc tế Ngurah Rai</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ngô Vu Nam Ninh">Sân bay quốc tế Ngô Vu Nam Ninh</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ninoy Aquino">Sân bay quốc tế Ninoy Aquino</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Niue">Sân bay quốc tế Niue</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Nnamdi Azikiwe">Sân bay quốc tế Nnamdi Azikiwe</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Norfolk">Sân bay quốc tế Norfolk</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Norman Manley">Sân bay quốc tế Norman Manley</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Nouadhibou">Sân bay quốc tế Nouadhibou</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Nursultan Nazarbayev">Sân bay quốc tế Nursultan Nazarbayev</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Nội Bài">Sân bay quốc tế Nội Bài</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế OR Tambo">Sân bay quốc tế OR Tambo</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Oakland">Sân bay quốc tế Oakland</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Odessa">Sân bay quốc tế Odessa</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Orlando">Sân bay quốc tế Orlando</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Osaka">Sân bay quốc tế Osaka</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Osvaldo Vieira">Sân bay quốc tế Osvaldo Vieira</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ottawa Mcdonald-Cartier">Sân bay quốc tế Ottawa Mcdonald-Cartier</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Owen Roberts">Sân bay quốc tế Owen Roberts</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Pago Pago">Sân bay quốc tế Pago Pago</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Palanga">Sân bay quốc tế Palanga</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Palau">Sân bay quốc tế Palau</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Palm Beach">Sân bay quốc tế Palm Beach</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Palonegro">Sân bay quốc tế Palonegro</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Paphos">Sân bay quốc tế Paphos</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Penang">Sân bay quốc tế Penang</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Peshawar">Sân bay quốc tế Peshawar</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Philadelphia">Sân bay quốc tế Philadelphia</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Phnôm Pênh">Sân bay quốc tế Phnôm Pênh</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Phoenix Sky Harbor">Sân bay quốc tế Phoenix Sky Harbor</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Phuket">Sân bay quốc tế Phuket</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Phượng Hoàng Tam Á">Sân bay quốc tế Phượng Hoàng Tam Á</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Phố Đông Thượng Hải">Sân bay quốc tế Phố Đông Thượng Hải</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Pierre Elliott Trudeau-Montréal">Sân bay quốc tế Pierre Elliott Trudeau-Montréal</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Pinto Martins">Sân bay quốc tế Pinto Martins</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Pittsburgh">Sân bay quốc tế Pittsburgh</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Playa de Oro">Sân bay quốc tế Playa de Oro</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Pohnpei">Sân bay quốc tế Pohnpei</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Polokwane">Sân bay quốc tế Polokwane</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Polonia">Sân bay quốc tế Polonia</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ponciano Arriaga">Sân bay quốc tế Ponciano Arriaga</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Port Columbus">Sân bay quốc tế Port Columbus</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Port Harcourt">Sân bay quốc tế Port Harcourt</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Port Hedland">Sân bay quốc tế Port Hedland</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Portland">Sân bay quốc tế Portland</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Praia">Sân bay quốc tế Praia</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Presidente Castro Pinto">Sân bay quốc tế Presidente Castro Pinto</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Presidente Nicolau Lobato">Sân bay quốc tế Presidente Nicolau Lobato</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Prince Said Ibrahim">Sân bay quốc tế Prince Said Ibrahim</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Princess Juliana">Sân bay quốc tế Princess Juliana</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Pristina">Sân bay quốc tế Pristina</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Pune">Sân bay quốc tế Pune</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Punta Cana">Sân bay quốc tế Punta Cana</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Queen Alia">Sân bay quốc tế Queen Alia</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Queen Beatrix">Sân bay quốc tế Queen Beatrix</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Querétaro">Sân bay quốc tế Querétaro</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Quetta">Sân bay quốc tế Quetta</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Quetzalcóatl">Sân bay quốc tế Quetzalcóatl</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Québec City Jean Lesage">Sân bay quốc tế Québec City Jean Lesage</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Quần đảo Marshall">Sân bay quốc tế Quần đảo Marshall</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Rafael Núñez">Sân bay quốc tế Rafael Núñez</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Raja Sansi">Sân bay quốc tế Raja Sansi</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Rajiv Gandhi">Sân bay quốc tế Rajiv Gandhi</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Raleigh-Durham">Sân bay quốc tế Raleigh-Durham</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ramón Villeda Morales">Sân bay quốc tế Ramón Villeda Morales</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Recife/Guararapes-Gilberto Freyre">Sân bay quốc tế Recife/Guararapes-Gilberto Freyre</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Reno-Tahoe">Sân bay quốc tế Reno-Tahoe</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Riga">Sân bay quốc tế Riga</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Rio de Janeiro-Galeão">Sân bay quốc tế Rio de Janeiro-Galeão</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Roberts">Sân bay quốc tế Roberts</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Rodríguez Ballón">Sân bay quốc tế Rodríguez Ballón</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ruzyně">Sân bay quốc tế Ruzyně</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Sabiha Gökçen">Sân bay quốc tế Sabiha Gökçen</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Sacramento">Sân bay quốc tế Sacramento</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Sadiq Abubakar III">Sân bay quốc tế Sadiq Abubakar III</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Saint-Exupéry">Sân bay quốc tế Saint-Exupéry</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Saipan">Sân bay quốc tế Saipan</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Salgado Filho">Sân bay quốc tế Salgado Filho</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế San Antonio">Sân bay quốc tế San Antonio</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế San Diego">Sân bay quốc tế San Diego</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế San Francisco">Sân bay quốc tế San Francisco</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế San Jose">Sân bay quốc tế San Jose</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Sana&apos;a">Sân bay quốc tế Sana&apos;a</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Sangster">Sân bay quốc tế Sangster</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Sarajevo">Sân bay quốc tế Sarajevo</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Sardar Vallabhbhai Patel">Sân bay quốc tế Sardar Vallabhbhai Patel</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Savannah/Hilton Head">Sân bay quốc tế Savannah/Hilton Head</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Seattle-Tacoma">Sân bay quốc tế Seattle-Tacoma</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Seychelles">Sân bay quốc tế Seychelles</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Shah Amanat">Sân bay quốc tế Shah Amanat</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Sharjah">Sân bay quốc tế Sharjah</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Sharm el-Sheikh">Sân bay quốc tế Sharm el-Sheikh</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Sheremetyevo">Sân bay quốc tế Sheremetyevo</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Shiraz">Sân bay quốc tế Shiraz</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Silvio Pettirossi">Sân bay quốc tế Silvio Pettirossi</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Simferopol">Sân bay quốc tế Simferopol</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Simón Bolívar">Sân bay quốc tế Simón Bolívar</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Singapore Changi">Sân bay quốc tế Singapore Changi</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Sir Seewoosagur Ramgoolam">Sân bay quốc tế Sir Seewoosagur Ramgoolam</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Sir Seretse Khama">Sân bay quốc tế Sir Seretse Khama</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Soekarno-Hatta">Sân bay quốc tế Soekarno-Hatta</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Song Lưu Thành Đô">Sân bay quốc tế Song Lưu Thành Đô</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Southwest Florida">Sân bay quốc tế Southwest Florida</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Spokane">Sân bay quốc tế Spokane</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Stanfield Halifax">Sân bay quốc tế Stanfield Halifax</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Sultan Syarif Qasim II">Sân bay quốc tế Sultan Syarif Qasim II</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Sunan">Sân bay quốc tế Sunan</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Suvarnabhumi">Sân bay quốc tế Suvarnabhumi</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Syracuse Hancock">Sân bay quốc tế Syracuse Hancock</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế São Paulo-Guarulhos">Sân bay quốc tế São Paulo-Guarulhos</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ta&apos;izz">Sân bay quốc tế Ta&apos;izz</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Taba">Sân bay quốc tế Taba</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Tabriz">Sân bay quốc tế Tabriz</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Tampa">Sân bay quốc tế Tampa</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Tancredo Neves">Sân bay quốc tế Tancredo Neves</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Tapachula">Sân bay quốc tế Tapachula</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Tbilisi">Sân bay quốc tế Tbilisi</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ted Stevens Anchorage">Sân bay quốc tế Ted Stevens Anchorage</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Teniente Luis Candelaria">Sân bay quốc tế Teniente Luis Candelaria</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Thessaloniki">Sân bay quốc tế Thessaloniki</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Thiên Hà Vũ Hán">Sân bay quốc tế Thiên Hà Vũ Hán</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Thành Cát Tư Hãn">Sân bay quốc tế Thành Cát Tư Hãn</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Thành phố Mexico">Sân bay quốc tế Thành phố Mexico</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Thành phố Salt Lake">Sân bay quốc tế Thành phố Salt Lake</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Thái Bình Cáp Nhĩ Tân">Sân bay quốc tế Thái Bình Cáp Nhĩ Tân</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Thủ Đô Bắc Kinh">Sân bay quốc tế Thủ Đô Bắc Kinh</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Tirana Nënë Tereza">Sân bay quốc tế Tirana Nënë Tereza</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Tiruchirappalli">Sân bay quốc tế Tiruchirappalli</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Tiêu Sơn Hàng Châu">Sân bay quốc tế Tiêu Sơn Hàng Châu</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Tobías Bolaños">Sân bay quốc tế Tobías Bolaños</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Tocumen">Sân bay quốc tế Tocumen</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Tokyo">Sân bay quốc tế Tokyo</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Toncontín">Sân bay quốc tế Toncontín</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Torino-Caselle">Sân bay quốc tế Torino-Caselle</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Toronto Pearson">Sân bay quốc tế Toronto Pearson</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Toulouse Blagnac">Sân bay quốc tế Toulouse Blagnac</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Toussaint Louverture">Sân bay quốc tế Toussaint Louverture</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Townsville">Sân bay quốc tế Townsville</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Tribhuvan">Sân bay quốc tế Tribhuvan</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Tripoli">Sân bay quốc tế Tripoli</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Trivandrum">Sân bay quốc tế Trivandrum</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Trường Lạc Phúc Châu">Sân bay quốc tế Trường Lạc Phúc Châu</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Trường Thủy Côn Minh">Sân bay quốc tế Trường Thủy Côn Minh</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Tunis-Carthage">Sân bay quốc tế Tunis-Carthage</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Tân Hải Thiên Tân">Sân bay quốc tế Tân Hải Thiên Tân</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Tân Sơn Nhất">Sân bay quốc tế Tân Sơn Nhất</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Tân Trịnh Trịnh Châu">Sân bay quốc tế Tân Trịnh Trịnh Châu</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế U-Tapao">Sân bay quốc tế U-Tapao</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Ufa">Sân bay quốc tế Ufa</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế V. C. Bird">Sân bay quốc tế V. C. Bird</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Val de Cães">Sân bay quốc tế Val de Cães</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Vancouver">Sân bay quốc tế Vancouver</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Venustiano Carranza">Sân bay quốc tế Venustiano Carranza</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Victoria">Sân bay quốc tế Victoria</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Vilnius">Sân bay quốc tế Vilnius</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Viracopos-Campinas">Sân bay quốc tế Viracopos-Campinas</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Viru Viru">Sân bay quốc tế Viru Viru</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Viên">Sân bay quốc tế Viên</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Vladivostok">Sân bay quốc tế Vladivostok</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Volgograd">Sân bay quốc tế Volgograd</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Voronezh">Sân bay quốc tế Voronezh</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Vũ Túc Thái Nguyên">Sân bay quốc tế Vũ Túc Thái Nguyên</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Washington Dulles">Sân bay quốc tế Washington Dulles</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Wattay">Sân bay quốc tế Wattay</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Wellington">Sân bay quốc tế Wellington</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Windhoek Hosea Kutako">Sân bay quốc tế Windhoek Hosea Kutako</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Winnipeg James Armstrong Richardson">Sân bay quốc tế Winnipeg James Armstrong Richardson</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Xoxocotlán">Sân bay quốc tế Xoxocotlán</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Xương Bắc Nam Xương">Sân bay quốc tế Xương Bắc Nam Xương</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Yangon">Sân bay quốc tế Yangon</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Yangyang">Sân bay quốc tế Yangyang</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Yap">Sân bay quốc tế Yap</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Zamboanga">Sân bay quốc tế Zamboanga</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Zaporizhia">Sân bay quốc tế Zaporizhia</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Zia">Sân bay quốc tế Zia</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Zumbi dos Palmares">Sân bay quốc tế Zumbi dos Palmares</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Zvartnots">Sân bay quốc tế Zvartnots</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế mới Port Sudan">Sân bay quốc tế mới Port Sudan</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế quốc vương Abdulaziz">Sân bay quốc tế quốc vương Abdulaziz</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế quốc vương Khalid">Sân bay quốc tế quốc vương Khalid</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế tướng Abelardo L. Rodríguez">Sân bay quốc tế tướng Abelardo L. Rodríguez</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Đà Nẵng">Sân bay quốc tế Đà Nẵng</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Đào Tiên Thẩm Dương">Sân bay quốc tế Đào Tiên Thẩm Dương</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Đào Viên Đài Loan">Sân bay quốc tế Đào Viên Đài Loan</option>';
+            name_vi_options_str  += '<option value="Sân bay quốc tế Šiauliai">Sân bay quốc tế Šiauliai</option>';
+            name_vi_options_str  += '<option value="Sân bay vũ trụ Baykonur">Sân bay vũ trụ Baykonur</option>';
+            name_vi_options_str  += '<option value="Sân bay Đài Nam">Sân bay Đài Nam</option>';
+            name_vi_options_str  += '<option value="Sân bay Đài Trung">Sân bay Đài Trung</option>';
+            name_vi_options_str  += '<option value="Sân bay Łódź Władysław Reymont">Sân bay Łódź Władysław Reymont</option>';
+            name_vi_options_str  += '<option value="Trung tâm vũ trụ Guyane">Trung tâm vũ trụ Guyane</option>';
+            name_vi_options_str  += '<option value="Trung tâm vũ trụ Kennedy">Trung tâm vũ trụ Kennedy</option>';
+            sel_name_vi.innerHTML = name_vi_options_str;
+            div_name_vi.appendChild(sel_name_vi);
+            var lab_name_vi = document.createElement('div');
+            lab_name_vi.innerHTML = 'name_vi';
+            lab_name_vi.className = 'filterlabel';
+            div_name_vi.appendChild(lab_name_vi);
+            var reset_name_vi = document.createElement('div');
+            reset_name_vi.innerHTML = 'clear filter';
+            reset_name_vi.className = 'filterlabel';
+            reset_name_vi.onclick = function() {
+                var options = document.getElementById("sel_name_vi").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_name_vi.appendChild(reset_name_vi);
+        </script>
+    </body>
+</html>
